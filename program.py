@@ -1,10 +1,10 @@
-from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QMessageBox, QFrame, QVBoxLayout, QHBoxLayout, QLabel, QSizePolicy
+from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QMessageBox, QFrame, QVBoxLayout, QHBoxLayout, QLabel, QSizePolicy, QGraphicsDropShadowEffect
 import sys
-from PySide6.QtGui import QCloseEvent, QScreen, QPixmap
-from PySide6.QtCore import Qt
+from PySide6.QtGui import QCloseEvent, QScreen, QPixmap, QColor
+from PySide6.QtCore import Qt, QPoint, QPropertyAnimation, QSize
 
 
-class ExampleWindow(QWidget):
+class Window(QWidget):
     def __init__(self):
         super().__init__()
         screen = QApplication.primaryScreen()
@@ -25,12 +25,16 @@ class ExampleWindow(QWidget):
         self.left_panel = self.createLeftPanel()
         main_layout.addWidget(self.left_panel, 3)
 
+        #shadow and splitter
         splitter = self.createLeftSPlitter()
+        splitter.setGraphicsEffect(QGraphicsDropShadowEffect(self, blurRadius=15, offset=QPoint(3, 0), color=QColor(0, 0, 0, 160)))
         main_layout.addWidget(splitter)
 
         #content part
         self.content_part = self.createContent()
         main_layout.addWidget(self.content_part, 7)
+        
+        splitter.raise_()
 
         #center location
         posX = (self.ScreenSize.width() - self.width)/2
@@ -47,24 +51,23 @@ class ExampleWindow(QWidget):
         image_label = QLabel()
         pixmap = QPixmap("images/logo.png")
         image_label.setPixmap(pixmap)
-        image_label.setScaledContents(False)
         image_label.setAlignment(Qt.AlignCenter)
 
-        image_label.setMinimumSize(100,100)
+        width = 0.3 * self.width
+
+        image_label.setMinimumSize(width,width)
+        image_label.setScaledContents(True)
+
         image_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-        image_label.setPixmap(pixmap.scaled(image_label.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation))
-
-        def resizeEvent(event):
-            size = min(image_label.width(), image_label.height())
-            image_label.setFixedSize(size,size)
-            image_label.setPixmap(pixmap.scaled(size,size,Qt.KeepAspectRatio, Qt.SmoothTransformation))
-            event.accept()
-
-        image_label.resizeEvent = resizeEvent
+        raise_scale(image_label, 1.05, 200)
+        
         
         layout.addWidget(image_label)
         layout.addStretch()
+
+        
+
         return frame
     
     def createContent(self):
@@ -94,12 +97,32 @@ class ExampleWindow(QWidget):
             event.accept()
         else:
             event.ignore()
+    
+def raise_scale(label, scale_factor=1.2, duration=500):
+    original_size = label.minimumSize()
+    label.anim = QPropertyAnimation(label, b"size")
 
+    def enter_image(event):
+        label.anim.stop()
+        label.anim.setDuration(duration)
+        label.anim.setStartValue(label.size())
+        label.anim.setEndValue(QSize(int(original_size.width() * scale_factor), int(original_size.height() * scale_factor)))    
+        label.anim.start()
+
+    def leave_image(event):
+        label.anim.stop()
+        label.anim.setDuration(duration)
+        label.anim.setStartValue(label.size())
+        label.anim.setEndValue(original_size)
+        label.anim.start()
+
+    label.enterEvent = enter_image
+    label.leaveEvent = leave_image
 
 def run():
     app = QApplication(sys.argv)
 
-    ex = ExampleWindow()
+    ex = Window()
 
     sys.exit(app.exec())
 
