@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QMessageBox, QFrame, QVBoxLayout, QHBoxLayout, QLabel, QSizePolicy, QGraphicsDropShadowEffect
 import sys
 from PySide6.QtGui import QCloseEvent, QScreen, QPixmap, QColor
-from PySide6.QtCore import Qt, QPoint, QPropertyAnimation, QSize
+from PySide6.QtCore import Qt, QPoint, QPropertyAnimation, QSize, QRect, QEasingCurve
 
 
 class Window(QWidget):
@@ -97,7 +97,8 @@ class Window(QWidget):
             event.accept()
         else:
             event.ignore()
-    
+
+"""
 def raise_scale(label, scale_factor=1.2, duration=500):
     original_size = label.minimumSize()
     label.anim = QPropertyAnimation(label, b"size")
@@ -114,6 +115,67 @@ def raise_scale(label, scale_factor=1.2, duration=500):
         label.anim.setDuration(duration)
         label.anim.setStartValue(label.size())
         label.anim.setEndValue(original_size)
+        label.anim.start()
+
+    label.enterEvent = enter_image
+    label.leaveEvent = leave_image
+"""
+def raise_scale(label, scale_factor=1.2, duration=300):
+    original_geometry = None
+    is_animating = False
+    
+    #Создаем анимацию для geometry (позиция + размер)
+    label.anim = QPropertyAnimation(label, b"geometry")
+    label.anim.setEasingCurve(QEasingCurve.OutCubic)  # Плавная кривая анимации
+    
+    def animation_finished():
+        nonlocal is_animating
+        is_animating = False
+
+    label.anim.finished.connect(animation_finished)
+
+    def enter_image(event):
+        nonlocal original_geometry, is_animating
+        
+        if is_animating:
+            return
+            
+        if original_geometry is None:
+            original_geometry = label.geometry()
+        
+        is_animating = True
+        current_rect = label.geometry()
+        
+        # Вычисляем новый размер
+        new_width = int(original_geometry.width() * scale_factor)
+        new_height = int(original_geometry.height() * scale_factor)
+        
+        # Вычисляем новую позицию для центрирования относительно оригинальной позиции
+        center_x = original_geometry.x() + original_geometry.width() // 2
+        center_y = original_geometry.y() + original_geometry.height() // 2
+        
+        new_x = center_x - new_width // 2
+        new_y = center_y - new_height // 2
+        
+        new_rect = QRect(new_x, new_y, new_width, new_height)
+        
+        label.anim.setDuration(duration)
+        label.anim.setStartValue(current_rect)
+        label.anim.setEndValue(new_rect)
+        label.anim.start()
+
+    def leave_image(event):
+        nonlocal original_geometry, is_animating
+        
+        if is_animating or original_geometry is None:
+            return
+            
+        is_animating = True
+        current_rect = label.geometry()
+        
+        label.anim.setDuration(duration)
+        label.anim.setStartValue(current_rect)
+        label.anim.setEndValue(original_geometry)
         label.anim.start()
 
     label.enterEvent = enter_image
