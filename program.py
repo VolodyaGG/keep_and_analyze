@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QMessageBox, QFrame, QVBoxLayout, QHBoxLayout, QLabel, QSizePolicy, QGraphicsDropShadowEffect
 import sys
-from PySide6.QtGui import QCloseEvent, QScreen, QPixmap, QColor
+from PySide6.QtGui import QCloseEvent, QScreen, QPixmap, QColor, QFontDatabase, QFont
 from PySide6.QtCore import Qt, QPoint, QPropertyAnimation, QSize, QRect, QEasingCurve
 
 
@@ -48,6 +48,9 @@ class Window(QWidget):
         frame.setStyleSheet("background-color: #E0A4A4;")
 
         layout = QVBoxLayout(frame)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
         image_label = QLabel()
         pixmap = QPixmap("images/logo.png")
         image_label.setPixmap(pixmap)
@@ -64,6 +67,11 @@ class Window(QWidget):
         
         
         layout.addWidget(image_label)
+
+        button_frame = self.createLeftButtons()
+        layout.addWidget(button_frame,1)
+
+
         layout.addStretch()
 
         
@@ -98,7 +106,62 @@ class Window(QWidget):
         else:
             event.ignore()
 
+    def createLeftButtons(self):
+        frame = QFrame()
+        
+        frame.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        layout = QVBoxLayout(frame)
+
+        id = QFontDatabase.addApplicationFont("fonts/Manrope-Bold.ttf")
+        font = QFontDatabase.applicationFontFamilies(id)
+
+
+
+        frame.setMinimumHeight(self.height*0.3)
+
+        layout.setContentsMargins(10, 10, 10, 10)
+
+        buttons = ["writings", "connections", "archive"]
+        names = ["Записи", "Анализ", "Архив" ]
+
+        for i in range(len(buttons)):
+            name = f"{buttons[i]}_button"
+            name = QPushButton(names[i])
+            name.setFont(QFont(font))
+            name.setFixedHeight(self.height * 0.1)
+            name.setStyleSheet(
+                """
+                QPushButton {
+                    letter-spacing: 5px;
+                    background-color: white;
+                    border-radius: 10px;
+                    text-align: center;
+                    font-size: 23px;
+                }
+                QPushButton:hover {
+                    background-color: #bde0fe;
+                }
+
+                QPushButton:pressed {
+                    background-color: #ffafcc;
+                }
+
+                """
+            )
+            name.setGraphicsEffect(QGraphicsDropShadowEffect(self, blurRadius=15, offset=QPoint(3, 1), color=QColor(0, 0, 0, 160)))
+
+            layout.addWidget(name)
+
+        
+
+        
+        
+        layout.addStretch()
+
+        return frame
+
 """
+своя реализация
 def raise_scale(label, scale_factor=1.2, duration=500):
     original_size = label.minimumSize()
     label.anim = QPropertyAnimation(label, b"size")
@@ -120,6 +183,7 @@ def raise_scale(label, scale_factor=1.2, duration=500):
     label.enterEvent = enter_image
     label.leaveEvent = leave_image
 """
+#адаптировано (не своя реализация)
 def raise_scale(label, scale_factor=1.2, duration=300):
     original_geometry = None
     is_animating = False
